@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-import { inject, injectable } from 'inversify';
+import { inject, injectable, postConstruct } from 'inversify';
 import { CommandContribution, CommandRegistry, Command } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue } from '@theia/core/lib/browser';
-import { Languages, Language } from '@theia/languages/lib/browser';
+import { CommonCommands, PreferenceService, QuickPickItem, QuickPickService, LabelProvider, QuickPickValue, ApplicationShell } from '@theia/core/lib/browser';
 import { EditorManager } from './editor-manager';
 import { EncodingMode } from './editor';
 import { EditorPreferences } from './editor-preferences';
-import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { ResourceProvider, MessageService } from '@theia/core';
+import { LanguageService, Language } from '@theia/core/lib/browser/language-service';
+import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 
 export namespace EditorCommands {
 
@@ -140,6 +140,9 @@ export class EditorCommandContribution implements CommandContribution {
 
     public static readonly AUTOSAVE_PREFERENCE: string = 'editor.autoSave';
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     @inject(PreferenceService)
     protected readonly preferencesService: PreferenceService;
 
@@ -154,14 +157,23 @@ export class EditorCommandContribution implements CommandContribution {
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    @inject(Languages)
-    protected readonly languages: Languages;
+    @inject(LanguageService)
+    protected readonly languages: LanguageService;
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
 
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
+
+    @postConstruct()
+    protected init(): void {
+        this.editorPreferences.onPreferenceChanged(e => {
+            if (e.preferenceName === 'editor.autoSave' && e.newValue === 'on') {
+                this.shell.saveAll();
+            }
+        });
+    }
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(EditorCommands.SHOW_REFERENCES);
@@ -248,7 +260,7 @@ export class EditorCommandContribution implements CommandContribution {
         }
         const isReopenWithEncoding = (action === reopenWithEncodingPick.value);
 
-        const configuredEncoding = this.editorPreferences.get('files.encoding');
+        const configuredEncoding = this.preferencesService.get<string>('files.encoding', 'utf8', editor.uri.toString());
 
         const resource = await this.resourceProvider(editor.uri);
         const guessedEncoding = resource.guessEncoding ? await resource.guessEncoding() : undefined;

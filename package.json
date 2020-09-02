@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "engines": {
     "yarn": "1.0.x || >=1.2.1",
-    "node": ">=10.11.0 <12"
+    "node": ">=12.14.1 <13"
   },
   "resolutions": {
-    "**/@types/node": "~10.3.6"
+    "**/@types/node": "~10.3.6",
+    "**/node-abi": "^2.18.0"
   },
   "devDependencies": {
     "@types/chai-string": "^1.4.0",
@@ -16,14 +17,15 @@
     "@types/sinon": "^2.3.5",
     "@types/temp": "^0.8.29",
     "@types/uuid": "^7.0.3",
-    "@typescript-eslint/eslint-plugin": "^2.16.0",
-    "@typescript-eslint/eslint-plugin-tslint": "^2.16.0",
-    "@typescript-eslint/parser": "^2.16.0",
+    "@typescript-eslint/eslint-plugin": "^3.1.0",
+    "@typescript-eslint/eslint-plugin-tslint": "^3.1.0",
+    "@typescript-eslint/parser": "^3.1.0",
     "chai-string": "^1.4.0",
     "colors": "^1.4.0",
     "concurrently": "^3.5.0",
     "electron-mocha": "^8.2.0",
     "eslint": "^6.8.0",
+    "eslint-plugin-deprecation": "^1.1.0",
     "eslint-plugin-import": "^2.20.0",
     "eslint-plugin-no-null": "^1.0.2",
     "ignore-styles": "^5.0.1",
@@ -34,8 +36,8 @@
     "sinon": "^3.3.0",
     "temp": "^0.8.3",
     "tslint": "^5.12.0",
-    "typedoc": "^0.15.0-0",
-    "typedoc-plugin-external-module-map": "^1.0.0",
+    "typedoc": "^0.17.7",
+    "typedoc-plugin-external-module-map": "^1.2.1",
     "typescript": "^3.9.2",
     "uuid": "^8.0.0"
   },
@@ -97,8 +99,8 @@
     "vscode-builtin-gulp": "https://open-vsx.org/api/vscode/gulp/1.44.2/file/vscode.gulp-1.44.2.vsix",
     "vscode-builtin-handlebars": "https://open-vsx.org/api/vscode/handlebars/1.44.2/file/vscode.handlebars-1.44.2.vsix",
     "vscode-builtin-hlsl": "https://open-vsx.org/api/vscode/hlsl/1.44.2/file/vscode.hlsl-1.44.2.vsix",
-    "vscode-builtin-html": "https://open-vsx.org/api/vscode/html/1.44.2/file/vscode.html-1.44.2.vsix",
-    "vscode-builtin-html-language-features": "https://open-vsx.org/api/vscode/html-language-features/1.45.1/file/vscode.html-language-features-1.45.1.vsix",
+    "vscode-builtin-html": "https://open-vsx.org/api/vscode/html/1.48.0-next.4a1bcdafe9/file/vscode.html-1.48.0-next.4a1bcdafe9.vsix",
+    "vscode-builtin-html-language-features": "https://open-vsx.org/api/vscode/html-language-features/1.48.0-next.4a1bcdafe9/file/vscode.html-language-features-1.48.0-next.4a1bcdafe9.vsix",
     "vscode-builtin-ini": "https://open-vsx.org/api/vscode/ini/1.44.2/file/vscode.ini-1.44.2.vsix",
     "vscode-builtin-jake": "https://open-vsx.org/api/vscode/jake/1.44.2/file/vscode.jake-1.44.2.vsix",
     "vscode-builtin-java": "https://open-vsx.org/api/vscode/java/1.44.2/file/vscode.java-1.44.2.vsix",

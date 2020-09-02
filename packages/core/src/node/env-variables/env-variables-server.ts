@@ -17,6 +17,7 @@
 import { join } from 'path';
 import { homedir } from 'os';
 import { injectable } from 'inversify';
+import * as drivelist from 'drivelist';
 import { EnvVariable, EnvVariablesServer } from '../../common/env-variables';
 import { isWindows } from '../../common/os';
 import { FileUri } from '../file-uri';
@@ -25,9 +26,12 @@ import { FileUri } from '../file-uri';
 export class EnvVariablesServerImpl implements EnvVariablesServer {
 
     protected readonly envs: { [key: string]: EnvVariable } = {};
-    protected readonly configDirUri = FileUri.create(join(homedir(), '.theia')).toString();
+    protected readonly homeDirUri = FileUri.create(homedir()).toString();
+    protected readonly configDirUri: Promise<string>;
 
     constructor() {
+        this.configDirUri = this.createConfigDirUri();
+        this.configDirUri.then(configDirUri => console.log(`Configuration directory URI: '${configDirUri}'`));
         const prEnv = process.env;
         Object.keys(prEnv).forEach((key: string) => {
             let keyName = key;
@@ -36,6 +40,10 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
             }
             this.envs[keyName] = { 'name': keyName, 'value': prEnv[key] };
         });
+    }
+
+    protected async createConfigDirUri(): Promise<string> {
+        return FileUri.create(process.env.THEIA_CONFIG_DIR || join(homedir(), '.theia')).toString();
     }
 
     async getExecPath(): Promise<string> {
@@ -53,8 +61,40 @@ export class EnvVariablesServerImpl implements EnvVariablesServer {
         return this.envs[key];
     }
 
-    async getConfigDirUri(): Promise<string> {
+    getConfigDirUri(): Promise<string> {
         return this.configDirUri;
+    }
+
+    async getHomeDirUri(): Promise<string> {
+        return this.homeDirUri;
+    }
+
+    async getDrives(): Promise<string[]> {
+        const uris: string[] = [];
+        const drives = await drivelist.list();
+        for (const drive of drives) {
+            for (const mounpoint of drive.mountpoints) {
+                if (this.filterHiddenPartitions(mounpoint.path)) {
+                    uris.push(FileUri.create(mounpoint.path).toString());
+                }
+            }
+        }
+        return uris;
+    }
+
+    /**
+     * Filters hidden and system partitions.
+     */
+    protected filterHiddenPartitions(path: string): boolean {
+        // OS X: This is your sleep-image. When your Mac goes to sleep it writes the contents of its memory to the hard disk. (https://bit.ly/2R6cztl)
+        if (path === '/private/var/vm') {
+            return false;
+        }
+        // Ubuntu: This system partition is simply the boot partition created when the computers mother board runs UEFI rather than BIOS. (https://bit.ly/2N5duHr)
+        if (path === '/boot/efi') {
+            return false;
+        }
+        return true;
     }
 
 }

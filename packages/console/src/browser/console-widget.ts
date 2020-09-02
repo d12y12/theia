@@ -22,7 +22,6 @@ import { BaseWidget, PanelLayout, Widget, Message, MessageLoop, StatefulWidget, 
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { ProtocolToMonacoConverter, MonacoToProtocolConverter } from 'monaco-languageclient/lib';
 import { ConsoleHistory } from './console-history';
 import { ConsoleContentWidget } from './console-content-widget';
 import { ConsoleSession } from './console-session';
@@ -61,12 +60,6 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     @inject(ConsoleOptions)
     protected readonly options: ConsoleOptions;
-
-    @inject(MonacoToProtocolConverter)
-    protected readonly m2p: MonacoToProtocolConverter;
-
-    @inject(ProtocolToMonacoConverter)
-    protected readonly p2m: ProtocolToMonacoConverter;
 
     @inject(ConsoleContentWidget)
     readonly content: ConsoleContentWidget;
@@ -110,10 +103,11 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(input);
         this.toDispose.push(input.getControl().onDidLayoutChange(() => this.resizeContent()));
 
-        // todo update font if fontInfo was changed only
-        // it's impossible at the moment, but will be fixed for next upgrade of monaco version
-        // see https://github.com/microsoft/vscode/commit/5084e8ca1935698c98c163e339ca664818786c6d
-        this.toDispose.push(input.getControl().onDidChangeConfiguration(() => this.updateFont()));
+        this.toDispose.push(input.getControl().onDidChangeConfiguration(event => {
+            if (event.hasChanged(monaco.editor.EditorOption.fontInfo)) {
+                this.updateFont();
+            }
+        }));
 
         this.updateFont();
         if (inputFocusContextKey) {

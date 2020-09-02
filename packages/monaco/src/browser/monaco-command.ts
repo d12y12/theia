@@ -15,8 +15,7 @@
  ********************************************************************************/
 
 import { injectable, inject } from 'inversify';
-import { ProtocolToMonacoConverter } from 'monaco-languageclient/lib';
-import { Position, Location } from '@theia/languages/lib/browser';
+import { Position, Location } from 'vscode-languageserver-types';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands } from '@theia/core/lib/browser';
 import { QuickOpenService } from '@theia/core/lib/browser/quick-open/quick-open-service';
@@ -26,6 +25,7 @@ import { MonacoEditor } from './monaco-editor';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from './monaco-command-registry';
 import { MonacoEditorService } from './monaco-editor-service';
 import { MonacoTextModelService } from './monaco-text-model-service';
+import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 
 export namespace MonacoCommands {
 
@@ -92,13 +92,13 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
      *
      * Such actions should be enabled only if the current editor is available.
      *
-     * `actions.find` and `editor.action.startFindReplaceAction` are registed as handlers for `find` and `replace`.
-     * If handlers are not enabled then the core should prevent the default browser behaviour.
+     * `actions.find` and `editor.action.startFindReplaceAction` are registered as handlers for `find` and `replace`.
+     * If handlers are not enabled then the core should prevent the default browser behavior.
      * Other Theia extensions can register alternative implementations using custom enablement.
      *
      * ### Global Commands
      *
-     * These commands are not necessary dependend on the current editor and enabled always.
+     * These commands are not necessary dependent on the current editor and enabled always.
      * But they depend on services which are global in VS Code, but bound to the editor in Monaco,
      * i.e. `ICodeEditorService` or `IContextKeyService`. We should take care of providing Theia implementations for such services.
      *
