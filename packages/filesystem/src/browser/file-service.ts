@@ -65,6 +65,7 @@ import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding, DecodeStreamResult } from '@theia/core/lib/common/encoding-service';
 import { Mutable } from '@theia/core/lib/common/types';
 import { readFileIntoStream } from '../common/io';
+import { FileSystemWatcherErrorHandler } from './filesystem-watcher-error-handler';
 
 export interface FileOperationParticipant {
 
@@ -247,6 +248,9 @@ export class FileService {
     @inject(ContributionProvider) @named(FileServiceContribution)
     protected readonly contributions: ContributionProvider<FileServiceContribution>;
 
+    @inject(FileSystemWatcherErrorHandler)
+    protected readonly watcherErrorHandler: FileSystemWatcherErrorHandler;
+
     @postConstruct()
     protected init(): void {
         for (const contribution of this.contributions.getContributions()) {
@@ -308,6 +312,7 @@ export class FileService {
 
         const providerDisposables = new DisposableCollection();
         providerDisposables.push(provider.onDidChangeFile(changes => this.onDidFilesChangeEmitter.fire(new FileChangesEvent(changes))));
+        providerDisposables.push(provider.onFileWatchError(() => this.handleFileWatchError()));
         providerDisposables.push(provider.onDidChangeCapabilities(() => this.onDidChangeFileSystemProviderCapabilitiesEmitter.fire({ provider, scheme })));
 
         return Disposable.create(() => {
@@ -762,7 +767,7 @@ export class FileService {
      * that only the mtime is an indicator for a file that has changed on disk.
      *
      * Second, if the mtime has advanced, we compare the size of the file on disk with our previous
-     * one using the etag() function. Relying only on the mtime check has prooven to produce false
+     * one using the etag() function. Relying only on the mtime check has proven to produce false
      * positives due to file system weirdness (especially around remote file systems). As such, the
      * check for size is a weaker check because it can return a false negative if the file has changed
      * but to the same length. This is a compromise we take to avoid having to produce checksums of
@@ -1019,7 +1024,7 @@ export class FileService {
         // validation
         const { exists, isSameResourceWithDifferentPathCase } = await this.doValidateMoveCopy(sourceProvider, source, targetProvider, target, mode, overwrite);
 
-        // delete as needed (unless target is same resurce with different path case)
+        // delete as needed (unless target is same resource with different path case)
         if (exists && !isSameResourceWithDifferentPathCase && overwrite) {
             await this.delete(target, { recursive: true });
         }
@@ -1675,4 +1680,7 @@ export class FileService {
 
     // #endregion
 
+    protected handleFileWatchError(): void {
+        this.watcherErrorHandler.handleError();
+    }
 }

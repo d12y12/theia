@@ -31,6 +31,9 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
 
+    private readonly onFileWatchErrorEmitter = new Emitter<void>();
+    readonly onFileWatchError = this.onFileWatchErrorEmitter.event;
+
     constructor(
         protected readonly delegate: FileSystemProvider,
         protected readonly options: DelegatingFileSystemProvider.Options,
@@ -38,6 +41,8 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     ) {
         this.toDispose.push(this.onDidChangeFileEmitter);
         this.toDispose.push(delegate.onDidChangeFile(changes => this.handleFileChanges(changes)));
+        this.toDispose.push(this.onFileWatchErrorEmitter);
+        this.toDispose.push(delegate.onFileWatchError(changes => this.onFileWatchErrorEmitter.fire()));
     }
 
     dispose(): void {
@@ -186,7 +191,7 @@ export class DelegatingFileSystemProvider implements Required<FileSystemProvider
     /**
      * Converts from an underlying fs provider resource format.
      *
-     * For example converting `file` resources unser a user home to `user-storage` resource:
+     * For example converting `file` resources under a user home to `user-storage` resource:
      * - file://home/.theia/settings.json => user-storage:/user/settings.json
      * - file://documents/some-document.txt => undefined
      */
@@ -212,7 +217,7 @@ export namespace DelegatingFileSystemProvider {
         /**
          * Converts from an underlying fs provider resource format.
          *
-         * For example converting `file` resources unser a user home to `user-storage` resource:
+         * For example converting `file` resources under a user home to `user-storage` resource:
          * - file://home/.theia/settings.json => user-storage:/settings.json
          * - file://documents/some-document.txt => undefined
          */

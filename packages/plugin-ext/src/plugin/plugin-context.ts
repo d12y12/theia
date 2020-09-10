@@ -119,8 +119,10 @@ import {
     CommentMode,
     CallHierarchyItem,
     CallHierarchyIncomingCall,
-    CallHierarchyOutgoingCall
+    CallHierarchyOutgoingCall,
+    TimelineItem
 } from './types-impl';
+import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorsExtImpl } from './text-editors';
@@ -151,6 +153,7 @@ import { ClipboardExt } from './clipboard-ext';
 import { WebviewsExtImpl } from './webviews';
 import { ExtHostFileSystemEventService } from './file-system-event-service-ext-impl';
 import { LabelServiceExtImpl } from '../plugin/label-service';
+import { TimelineExtImpl } from './timeline';
 
 export function createAPIFactory(
     rpc: RPCProtocol,
@@ -165,6 +168,7 @@ export function createAPIFactory(
     webviewExt: WebviewsExtImpl
 ): PluginAPIFactory {
 
+    const authenticationExt = rpc.set(MAIN_RPC_CONTEXT.AUTHENTICATION_EXT, new AuthenticationExtImpl(rpc));
     const commandRegistry = rpc.set(MAIN_RPC_CONTEXT.COMMAND_REGISTRY_EXT, new CommandRegistryImpl(rpc));
     const quickOpenExt = rpc.set(MAIN_RPC_CONTEXT.QUICK_OPEN_EXT, new QuickOpenExtImpl(rpc));
     const dialogsExt = new DialogsExtImpl(rpc);
@@ -184,9 +188,36 @@ export function createAPIFactory(
     const scmExt = rpc.set(MAIN_RPC_CONTEXT.SCM_EXT, new ScmExtImpl(rpc, commandRegistry));
     const decorationsExt = rpc.set(MAIN_RPC_CONTEXT.DECORATIONS_EXT, new DecorationsExtImpl(rpc));
     const labelServiceExt = rpc.set(MAIN_RPC_CONTEXT.LABEL_SERVICE_EXT, new LabelServiceExtImpl(rpc));
+    const timelineExt = rpc.set(MAIN_RPC_CONTEXT.TIMELINE_EXT, new TimelineExtImpl(rpc, commandRegistry));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     return function (plugin: InternalPlugin): typeof theia {
+        const authentication: typeof theia.authentication = {
+            registerAuthenticationProvider(provider: theia.AuthenticationProvider): theia.Disposable {
+                return authenticationExt.registerAuthenticationProvider(provider);
+            },
+            get onDidChangeAuthenticationProviders(): theia.Event<theia.AuthenticationProvidersChangeEvent> {
+                return authenticationExt.onDidChangeAuthenticationProviders;
+            },
+            getProviderIds(): Thenable<ReadonlyArray<string>> {
+                return authenticationExt.getProviderIds();
+            },
+            get providerIds(): string[] {
+                return authenticationExt.providerIds;
+            },
+            get providers(): ReadonlyArray<theia.AuthenticationProviderInformation> {
+                return authenticationExt.providers;
+            },
+            getSession(providerId: string, scopes: string[], options: theia.AuthenticationGetSessionOptions) {
+                return authenticationExt.getSession(plugin, providerId, scopes, options as any);
+            },
+            logout(providerId: string, sessionId: string): Thenable<void> {
+                return authenticationExt.logout(providerId, sessionId);
+            },
+            get onDidChangeSessions(): theia.Event<theia.AuthenticationSessionsChangeEvent> {
+                return authenticationExt.onDidChangeSessions;
+            }
+        };
         const commands: typeof theia.commands = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             registerCommand(command: theia.CommandDescription | string, handler?: <T>(...args: any[]) => T | Thenable<T | undefined>, thisArg?: any): Disposable {
@@ -496,6 +527,9 @@ export function createAPIFactory(
             },
             registerResourceLabelFormatter(formatter: ResourceLabelFormatter): theia.Disposable {
                 return labelServiceExt.$registerResourceLabelFormatter(formatter);
+            },
+            registerTimelineProvider(scheme: string | string[], provider: theia.TimelineProvider): theia.Disposable {
+                return timelineExt.registerTimelineProvider(plugin, scheme, provider);
             }
         };
 
@@ -773,6 +807,7 @@ export function createAPIFactory(
 
         return <typeof theia>{
             version: require('../../package.json').version,
+            authentication,
             commands,
             comment,
             window,
@@ -873,7 +908,8 @@ export function createAPIFactory(
             CommentMode,
             CallHierarchyItem,
             CallHierarchyIncomingCall,
-            CallHierarchyOutgoingCall
+            CallHierarchyOutgoingCall,
+            TimelineItem
         };
     };
 }

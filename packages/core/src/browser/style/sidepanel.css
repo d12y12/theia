@@ -48,7 +48,6 @@
 
 .p-TabBar.theia-app-sides .p-TabBar-tab {
   position: relative;
-  padding: var(--theia-private-sidebar-tab-padding-top-and-bottom) var(--theia-private-sidebar-tab-padding-left-and-right);
   background: var(--theia-activityBar-background);
   flex-direction: column;
   justify-content: center;
@@ -116,8 +115,8 @@
   background-color: var(--theia-activityBar-inactiveForeground);
 
   /* svg */
-  width: var(--theia-private-sidebar-icon-size);
-  height: var(--theia-private-sidebar-icon-size);
+  width: var(--theia-private-sidebar-tab-width);
+  height: var(--theia-private-sidebar-tab-width);
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
   mask-size: var(--theia-private-sidebar-icon-size);
